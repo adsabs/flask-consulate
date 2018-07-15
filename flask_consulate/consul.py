@@ -40,7 +40,7 @@ class Consul(object):
             os.environ.get('CONSUL_PORT', 8500)
         self.max_tries = self.kwargs.get('max_tries', 3)
 
-        self.session = None
+        self.consul = None
 
         if app is not None:
             self.init_app(app)
@@ -54,14 +54,14 @@ class Consul(object):
             raise RuntimeError('Flask application already initialized')
         app.extensions['consul'] = self
 
-        self.session = self._create_session(
+        self.consul = self._create_consul(
             test_connection=self.kwargs.get('test_connection', False),
         )
 
     @with_retry_connections()
-    def _create_session(self, test_connection=False):
+    def _create_consul(self, test_connection=False):
         """
-        Create a consulate.session object, and query for its leader to ensure
+        Create a consulate.consul object, and query for its leader to ensure
         that the connection is made.
 
         :param test_connection: call .leader() to ensure that the connection
@@ -69,10 +69,10 @@ class Consul(object):
         :type test_connection: bool
         :return consulate.Session instance
         """
-        session = consulate.Session(host=self.host, port=self.port)
+        consul = consulate.Consul(host=self.host, port=self.port)
         if test_connection:
-            session.status.leader()
-        return session
+            consul.status.leader()
+        return consul
 
     @with_retry_connections()
     def apply_remote_config(self, namespace=None):
@@ -93,7 +93,7 @@ class Consul(object):
                 environment=os.environ.get('ENVIRONMENT', 'generic_environment')
             )
 
-        for k, v in iteritems(self.session.kv.find(namespace)):
+        for k, v in iteritems(self.consul.kv.find(namespace)):
             k = k.replace(namespace, '')
             try:
                 self.app.config[k] = json.loads(v)
@@ -115,4 +115,4 @@ class Consul(object):
         kwargs passed to Consul.agent.service.register
         """
         kwargs.setdefault('name', self.app.name)
-        self.session.agent.service.register(**kwargs)
+        self.consul.agent.service.register(**kwargs)
