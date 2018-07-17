@@ -4,7 +4,6 @@ import os
 import json
 
 import consulate
-import deprecation
 
 from six import iteritems
 
@@ -42,7 +41,6 @@ class Consul(object):
         self.max_tries = self.kwargs.get('max_tries', 3)
 
         self.consul = None
-
         self._session = None # for backward compatibility
 
         if app is not None:
