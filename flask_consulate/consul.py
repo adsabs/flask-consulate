@@ -4,6 +4,7 @@ import os
 import json
 
 import consulate
+import deprecation
 
 from six import iteritems
 
@@ -42,8 +43,15 @@ class Consul(object):
 
         self.consul = None
 
+        self._session = None # for backward compatibility
+
         if app is not None:
             self.init_app(app)
+
+    @property
+    def session(self):
+        self.app.logger.warning("session field deprecated - please use .consul")
+        return self._session
 
     def init_app(self, app):
         self.app = app
@@ -57,6 +65,8 @@ class Consul(object):
         self.consul = self._create_consul(
             test_connection=self.kwargs.get('test_connection', False),
         )
+        # for backward compatibility
+        self._session = self.consul
 
     @with_retry_connections()
     def _create_consul(self, test_connection=False):
@@ -67,7 +77,7 @@ class Consul(object):
         :param test_connection: call .leader() to ensure that the connection
             is valid
         :type test_connection: bool
-        :return consulate.Session instance
+        :return consulate.Consul instance
         """
         consul = consulate.Consul(host=self.host, port=self.port)
         if test_connection:

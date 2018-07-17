@@ -63,6 +63,11 @@ class TestFlaskConsulate(unittest.TestCase):
         )
         self.assertIsNotNone(consul)
 
+        self.assertIsNotNone(consul.consul)
+
+        # consul.session should equal consul.consul. Included for backwards compatability
+        self.assertEqual(consul.consul, consul.session)
+
         httpretty.disable()
         httpretty.reset()
 
