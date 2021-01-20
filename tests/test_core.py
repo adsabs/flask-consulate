@@ -8,6 +8,7 @@ from flask import Flask
 
 from flask_consulate import Consul
 from flask_consulate.exceptions import ConsulConnectionError
+from consulate.exceptions import RequestError
 
 
 class TestFlaskConsulate(unittest.TestCase):
@@ -62,12 +63,17 @@ class TestFlaskConsulate(unittest.TestCase):
         )
         self.assertIsNotNone(consul)
 
+        self.assertIsNotNone(consul.consul)
+
+        # consul.session should equal consul.consul. Included for backwards compatability
+        self.assertEqual(consul.consul, consul.session)
+
         httpretty.disable()
         httpretty.reset()
 
         app = self.create_app()
         self.assertRaises(
-            ConsulConnectionError,
+            RequestError,
             lambda: Consul(
                 app,
                 consul_host='consul.internal',
@@ -88,7 +94,7 @@ class TestFlaskConsulate(unittest.TestCase):
             body="localhost:8300",
         )
         app = self.create_app()
-        with mock.patch('consulate.Session') as mocked:
+        with mock.patch('consulate.Consul') as mocked:
             consul = Consul(app)
             consul.register_service()
             self.assertEqual(mocked.return_value.agent.service.register.call_count, 1)
